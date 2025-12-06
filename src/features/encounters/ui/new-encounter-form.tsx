@@ -6,7 +6,6 @@ import { useState } from "react"
 import { Button } from "@/lib/ui/button"
 import { Input } from "@/lib/ui/input"
 import { Label } from "@/lib/ui/label"
-import { Textarea } from "@/lib/ui/textarea"
 import { Mic } from "lucide-react"
 
 interface NewEncounterFormProps {
@@ -14,17 +13,22 @@ interface NewEncounterFormProps {
   onCancel: () => void
 }
 
+const VISIT_TYPE_OPTIONS = [
+  { label: "History & Physical", value: "history_physical" },
+  { label: "Problem Visit", value: "problem_visit" },
+  { label: "Consult Note", value: "consult_note" },
+]
+
 export function NewEncounterForm({ onStart, onCancel }: NewEncounterFormProps) {
   const [patientName, setPatientName] = useState("")
-  const [patientId, setPatientId] = useState("")
-  const [visitReason, setVisitReason] = useState("")
+  const [visitType, setVisitType] = useState(VISIT_TYPE_OPTIONS[0]?.value ?? "")
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onStart({
       patient_name: patientName,
-      patient_id: patientId,
-      visit_reason: visitReason,
+      patient_id: "",
+      visit_reason: visitType,
     })
   }
 
@@ -47,29 +51,21 @@ export function NewEncounterForm({ onStart, onCancel }: NewEncounterFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="patient-id" className="text-sm text-muted-foreground">
-            Patient ID / MRN
+          <Label htmlFor="visit-type" className="text-sm text-muted-foreground">
+            Note Type
           </Label>
-          <Input
-            id="patient-id"
-            placeholder="Enter patient ID (optional)"
-            value={patientId}
-            onChange={(e) => setPatientId(e.target.value)}
-            className="rounded-xl border-border bg-secondary"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="visit-reason" className="text-sm text-muted-foreground">
-            Visit Reason
-          </Label>
-          <Textarea
-            id="visit-reason"
-            placeholder="Brief reason for visit (optional)"
-            value={visitReason}
-            onChange={(e) => setVisitReason(e.target.value)}
-            className="min-h-[80px] resize-none rounded-xl border-border bg-secondary"
-          />
+          <select
+            id="visit-type"
+            value={visitType}
+            onChange={(e) => setVisitType(e.target.value)}
+            className="w-full rounded-xl border border-border bg-secondary px-4 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {VISIT_TYPE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="flex gap-3 pt-4">
