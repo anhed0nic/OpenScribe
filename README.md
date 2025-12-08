@@ -2,7 +2,9 @@
 
 ## Demo
 
-[![OpenScribe Demo](https://cdn.loom.com/sessions/thumbnails/bf6170785b7f492db56a56636c70620a-1733696000000.jpg)](https://www.loom.com/share/bf6170785b7f492db56a56636c70620a)
+<div style="position: relative; padding-bottom: 56.25%; height: 0;">
+  <iframe src="https://www.loom.com/embed/bf6170785b7f492db56a56636c70620a?sid=7c1f5a5e-7c5e-4f5e-8f5e-7c5e8f5e7c5e" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
+</div>
 
 ## Project Overview
 
