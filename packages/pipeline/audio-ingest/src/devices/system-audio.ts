@@ -1,8 +1,21 @@
 "use client"
 
+type DesktopScreenSource = {
+  id: string
+  name?: string
+}
+
+declare global {
+  interface Window {
+    desktop?: {
+      getPrimaryScreenSource?: () => Promise<DesktopScreenSource | null>
+    }
+  }
+}
+
 type ChromeDesktopCaptureConstraints = MediaTrackConstraints & {
   mandatory?: {
-    chromeMediaSource: 'desktop'
+    chromeMediaSource: "desktop"
     chromeMediaSourceId?: string
     maxWidth?: number
     maxHeight?: number

@@ -13,6 +13,7 @@
   },
   "include": [
     "../packages/pipeline/eval/src/**/*.ts",
+    "../packages/pipeline/audio-ingest/src/**/*.ts",
     "../packages/pipeline/transcribe/src/**/*.ts"
   ],
   "exclude": [

@@ -4,16 +4,7 @@ import path from "node:path"
 import test from "node:test"
 import { parseWavHeader } from "../../../transcribe/src/core/wav.js"
 
-const SAMPLE_MP3 = path.resolve(
-  process.cwd(),
-  "packages",
-  "pipeline",
-  "eval",
-  "src",
-  "cases",
-  "testMP3",
-  "Sample Problem-Focused Standardized Patient Encounter.mp3",
-)
+const SAMPLE_MP3 = path.resolve(process.cwd(), "packages/pipeline/eval/src/cases/encounter/Sample Problem-Focused Standardized Patient Encounter.mp3")
 
 test("MP3 snippet is rejected by WAV validator", async () => {
   const mp3Buffer = await readFile(SAMPLE_MP3)
