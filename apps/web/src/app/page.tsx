@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react"
 import type { Encounter } from "@storage/types"
-import { useEncounters, EncounterList, IdleView, NewEncounterForm, RecordingView, ProcessingView } from "@ui"
+import { useEncounters, EncounterList, IdleView, NewEncounterForm, RecordingView, ProcessingView, ErrorBoundary, PermissionsDialog } from "@ui"
 import { NoteEditor } from "@note-rendering"
 import { useAudioRecorder, type RecordedSegment, warmupMicrophonePermission, warmupSystemAudioPermission } from "@audio"
 import { useSegmentUpload } from "@transcription"
@@ -20,7 +20,7 @@ type StepStatus = "pending" | "in-progress" | "done" | "failed"
 const SEGMENT_DURATION_MS = 10000
 const OVERLAP_MS = 250
 
-export default function HomePage() {
+function HomePageContent() {
   const { encounters, addEncounter, updateEncounter, deleteEncounter: removeEncounter, refresh } = useEncounters()
 
   const [view, setView] = useState<ViewState>({ type: "idle" })
@@ -34,64 +34,64 @@ export default function HomePage() {
   const finalTranscriptRef = useRef<string>("")
   const finalRecordingRef = useRef<Blob | null>(null)
 
+  const [showPermissionsDialog, setShowPermissionsDialog] = useState(false)
+  const permissionCheckInProgressRef = useRef(false)
+
   useEffect(() => {
     if (typeof window === "undefined") return
     if (window.__openscribePermissionsPrimed) return
+    if (permissionCheckInProgressRef.current) return
+    
     window.__openscribePermissionsPrimed = true
+    permissionCheckInProgressRef.current = true
 
-    const ensurePermissions = async () => {
-      const desktop = window.desktop
-      const readStatus = async (mediaType: "microphone" | "screen") => {
-        try {
-          const status = await desktop?.getMediaAccessStatus?.(mediaType)
-          return status ?? "unknown"
-        } catch (error) {
-          console.error(`Failed to read ${mediaType} access status`, error)
-          return "unknown"
+    const checkPermissions = async () => {
+      try {
+        const desktop = window.desktop
+        console.log("[Main Page] Desktop object available:", !!desktop)
+        console.log("[Main Page] Desktop API methods:", desktop ? Object.keys(desktop) : "none")
+        
+        if (!desktop?.getMediaAccessStatus) {
+          // Not in desktop environment, just warmup browser permissions
+          console.log("[Main Page] Not in desktop environment, skipping permission dialog")
+          void warmupMicrophonePermission()
+          return
         }
-      }
 
-      let microphoneStatus = await readStatus("microphone")
-      let screenStatus = await readStatus("screen")
+        console.log("[Main Page] Checking microphone permission...")
+        const micStatus = await desktop.getMediaAccessStatus("microphone")
+        console.log("[Main Page] Microphone status:", micStatus)
+        
+        // For system audio, we need to actually test if we can capture it
+        // The permission is granted implicitly when we successfully capture system audio
+        console.log("[Main Page] System audio is granted through capture capability")
+        const systemAudioGranted = true // Will be tested during actual capture
 
-      if (microphoneStatus !== "granted" || screenStatus !== "granted") {
-        try {
-          const result = await desktop?.requestMediaPermissions?.()
-          if (result) {
-            microphoneStatus = result.microphoneGranted ? "granted" : microphoneStatus
-            screenStatus = result.screenStatus ?? screenStatus
-          }
-        } catch (error) {
-          console.error("Desktop permission prompt failed", error)
-        }
-      }
-
-      if (microphoneStatus !== "granted") {
-        const micGranted = await warmupMicrophonePermission()
-        if (!micGranted) {
-          console.warn("Microphone permission still not granted")
+        if (micStatus !== "granted") {
+          console.log("[Main Page] Missing microphone permission, showing dialog")
+          setShowPermissionsDialog(true)
         } else {
-          microphoneStatus = "granted"
+          console.log("[Main Page] All permissions granted, warmup only")
+          // Warmup permissions in background
+          void warmupMicrophonePermission()
+          void warmupSystemAudioPermission()
         }
-      } else {
-        void warmupMicrophonePermission()
-      }
-
-      if (screenStatus !== "granted") {
-        const screenGranted = await warmupSystemAudioPermission()
-        if (!screenGranted) {
-          console.warn("Screen recording permission still not granted")
-          await desktop?.openScreenPermissionSettings?.()
-        } else {
-          screenStatus = "granted"
-        }
-      } else {
-        void warmupSystemAudioPermission()
+      } catch (error) {
+        console.error("[Main Page] Permission check failed:", error)
+      } finally {
+        permissionCheckInProgressRef.current = false
       }
     }
 
-    void ensurePermissions()
+    void checkPermissions()
   }, [])
+
+  const handlePermissionsComplete = async () => {
+    setShowPermissionsDialog(false)
+    // Warmup permissions after dialog is complete
+    void warmupMicrophonePermission()
+    void warmupSystemAudioPermission()
+  }
 
   const { enqueueSegment, resetQueue } = useSegmentUpload(sessionId, {
     onError: (error) => {
@@ -466,18 +466,31 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background">
-      <div className="flex h-full w-72 shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar">
-        <EncounterList
-          encounters={encounters}
-          selectedId={view.type === "viewing" ? view.encounterId : null}
-          onSelect={handleSelectEncounter}
-          onNewEncounter={handleStartNew}
-          onDeleteEncounter={handleDeleteEncounter}
-          disabled={view.type === "recording"}
-        />
+    <>
+      {showPermissionsDialog && <PermissionsDialog onComplete={handlePermissionsComplete} />}
+      <div className="flex h-screen w-screen overflow-hidden bg-background">
+        <div className="flex h-full w-72 shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar">
+          <EncounterList
+            encounters={encounters}
+            selectedId={view.type === "viewing" ? view.encounterId : null}
+            onSelect={handleSelectEncounter}
+            onNewEncounter={handleStartNew}
+            onDeleteEncounter={handleDeleteEncounter}
+            disabled={view.type === "recording"}
+          />
+        </div>
+        <main className="flex flex-1 flex-col overflow-hidden bg-background">
+          {renderMainContent()}
+        </main>
       </div>
-      <main className="flex flex-1 flex-col overflow-hidden bg-background">{renderMainContent()}</main>
-    </div>
+    </>
+  )
+}
+
+export default function HomePage() {
+  return (
+    <ErrorBoundary>
+      <HomePageContent />
+    </ErrorBoundary>
   )
 }

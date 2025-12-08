@@ -46,7 +46,7 @@ async function getKey(): Promise<CryptoKey> {
       if (keyBytes.byteLength !== 32) {
         throw new Error("NEXT_PUBLIC_SECURE_STORAGE_KEY must be a base64 encoded 256-bit key.")
       }
-      return getCrypto().subtle.importKey("raw", keyBytes, { name: "AES-GCM" }, false, ["encrypt", "decrypt"])
+      return getCrypto().subtle.importKey("raw", keyBytes.buffer as ArrayBuffer, { name: "AES-GCM" }, false, ["encrypt", "decrypt"])
     })().catch((error) => {
       keyPromise = null
       throw error
@@ -96,7 +96,11 @@ export async function loadSecureItem<T>(key: string): Promise<T | null> {
     }
   }
   const cryptoKey = await getKey()
-  const decrypted = await getCrypto().subtle.decrypt({ name: "AES-GCM", iv: payload.iv }, cryptoKey, payload.data)
+  const decrypted = await getCrypto().subtle.decrypt(
+    { name: "AES-GCM", iv: payload.iv.buffer as ArrayBuffer },
+    cryptoKey,
+    payload.data.buffer as ArrayBuffer
+  )
   try {
     return JSON.parse(DECODER.decode(decrypted)) as T
   } catch {

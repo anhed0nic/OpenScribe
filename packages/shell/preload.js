@@ -1,18 +1,21 @@
-const { contextBridge, desktopCapturer, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer } = require('electron');
 
 async function getPrimaryScreenSource() {
   try {
-    const sources = await desktopCapturer.getSources({
+    const sources = await ipcRenderer.invoke('desktop-capturer:get-sources', {
       types: ['screen'],
       thumbnailSize: { width: 0, height: 0 },
     });
-    if (!sources.length) {
+    
+    if (!sources || sources.length === 0) {
       return null;
     }
+    
     const primarySource =
       sources.find((source) => source.display_id === '0') ||
       sources.find((source) => /screen 1/i.test(source.name)) ||
       sources[0];
+      
     return primarySource
       ? { id: primarySource.id, name: primarySource.name, displayId: primarySource.display_id }
       : null;

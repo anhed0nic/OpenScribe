@@ -76,57 +76,64 @@ export function EncounterList({
         ) : (
           <div className="p-3">
             {filtered.map((encounter) => (
-              <button
+              <div
                 key={encounter.id}
-                onClick={() => onSelect(encounter)}
-                disabled={disabled}
                 className={cn(
-                  "mb-1 w-full rounded-xl p-3 text-left transition-colors",
+                  "relative mb-1 w-full rounded-xl p-3 text-left transition-colors",
                   "hover:bg-sidebar-accent",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  "disabled:pointer-events-none disabled:opacity-50",
+                  "focus-within:outline-none focus-within:ring-2 focus-within:ring-ring",
                   selectedId === encounter.id && "bg-sidebar-accent",
                 )}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {encounter.patient_name || "Unknown patient"}
-                    </p>
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      {encounter.visit_reason || "No reason specified"}
-                    </p>
+                <button
+                  onClick={() => onSelect(encounter)}
+                  disabled={disabled}
+                  className={cn(
+                    "w-full text-left",
+                    "focus-visible:outline-none",
+                    "disabled:pointer-events-none disabled:opacity-50",
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1 pr-8">
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {encounter.patient_name || "Unknown patient"}
+                      </p>
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        {encounter.visit_reason || "No reason specified"}
+                      </p>
+                    </div>
                   </div>
-                  {onDeleteEncounter ? (
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        void onDeleteEncounter(encounter.id)
-                      }}
-                      disabled={disabled}
-                      aria-label="Delete encounter"
-                      title="Delete encounter"
-                      className={cn(
-                        "rounded-md p-1 text-muted-foreground/70 transition-colors",
-                        "hover:bg-sidebar-accent hover:text-foreground",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                        "disabled:pointer-events-none disabled:opacity-50",
-                      )}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  ) : null}
-                </div>
-                <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3" />
-                  <span>
-                    {formatDistanceToNow(new Date(encounter.created_at), {
-                      addSuffix: true,
-                    })}
-                  </span>
-                </div>
-              </button>
+                  <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    <span>
+                      {formatDistanceToNow(new Date(encounter.created_at), {
+                        addSuffix: true,
+                      })}
+                    </span>
+                  </div>
+                </button>
+                {onDeleteEncounter ? (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      void onDeleteEncounter(encounter.id)
+                    }}
+                    disabled={disabled}
+                    aria-label="Delete encounter"
+                    title="Delete encounter"
+                    className={cn(
+                      "absolute right-3 top-3 rounded-md p-1 text-muted-foreground/70 transition-colors",
+                      "hover:bg-sidebar-accent hover:text-foreground",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      "disabled:pointer-events-none disabled:opacity-50",
+                    )}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                ) : null}
+              </div>
             ))}
           </div>
         )}

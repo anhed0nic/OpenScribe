@@ -28,6 +28,7 @@ const createMainWindow = async () => {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
+      enableRemoteModule: false,
     },
   });
 
@@ -118,5 +119,21 @@ function registerPermissionHandlers() {
       console.error('Failed to open screen permissions panel', error);
     });
     return true;
+  });
+
+  ipcMain.handle('desktop-capturer:get-sources', async (_event, opts) => {
+    try {
+      const { desktopCapturer } = require('electron');
+      const sources = await desktopCapturer.getSources(opts);
+      return sources.map(source => ({
+        id: source.id,
+        name: source.name,
+        display_id: source.display_id,
+        thumbnail: source.thumbnail?.toDataURL?.(),
+      }));
+    } catch (error) {
+      console.error('Failed to get desktop sources', error);
+      return [];
+    }
   });
 }
