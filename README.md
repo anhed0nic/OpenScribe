@@ -130,8 +130,8 @@ See [architecture.md](./architecture.md) for complete details.
 **Key Components:**
 - **UI Layer**: React components in `apps/web/` using Next.js App Router
 - **Audio Ingest**: Browser MediaRecorder API → WebM/MP4 blob
-- **Transcription**: OpenAI Whisper API (currently simulated)
-- **LLM**: OpenAI GPT-4o via provider-agnostic client
+- **Transcription**: OpenAI Whisper API
+- **LLM**: Provider-agnostic client
 - **Note Core**: Structured clinical note generation and validation
 - **Storage**: AES-GCM encrypted browser localStorage
 
