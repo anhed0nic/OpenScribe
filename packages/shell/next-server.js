@@ -6,7 +6,6 @@ const getPort = require('get-port');
 
 let nextServerProcess;
 let readyPromise;
-let serverUrl;
 
 const resolveNodePath = () => {
   // Use Node.js from system PATH
@@ -17,10 +16,28 @@ const resolveNodePath = () => {
 
 const resolveStandaloneDir = () => {
   if (!app || !app.isPackaged) {
-    return path.join(process.cwd(), 'build', 'web', 'standalone');
+    return path.join(process.cwd(), 'apps', 'web', '.next', 'standalone');
   }
 
-  return path.join(process.resourcesPath, 'next');
+  const standaloneDir = path.join(process.resourcesPath, 'next');
+
+  // Workaround for electron-builder issue #3104:
+  // We renamed node_modules to _node_modules during packaging
+  // Rename it back at runtime if it exists
+  const renamedNodeModules = path.join(standaloneDir, '_node_modules');
+  const normalNodeModules = path.join(standaloneDir, 'node_modules');
+
+  const fs = require('fs');
+  if (fs.existsSync(renamedNodeModules) && !fs.existsSync(normalNodeModules)) {
+    try {
+      fs.renameSync(renamedNodeModules, normalNodeModules);
+      console.log('Restored _node_modules to node_modules');
+    } catch (error) {
+      console.error('Failed to rename _node_modules back to node_modules:', error);
+    }
+  }
+
+  return standaloneDir;
 };
 
 const waitForServer = (url, timeoutMs = 20000) =>
@@ -100,7 +117,6 @@ const ensureNextServer = async () => {
     console.log(`Next.js server exited with code ${code} and signal ${signal}`);
     readyPromise = undefined;
     nextServerProcess = undefined;
-    serverUrl = undefined;
   });
 
   // Handle process errors (e.g., EADDRINUSE)
@@ -108,11 +124,9 @@ const ensureNextServer = async () => {
     console.error('Next.js server process error:', error);
     readyPromise = undefined;
     nextServerProcess = undefined;
-    serverUrl = undefined;
   });
 
   const url = `http://127.0.0.1:${port}`;
-  serverUrl = url;
   readyPromise = waitForServer(url).then(() => {
     console.log(`Next.js server ready on ${url}`);
     return { url, port };
@@ -144,7 +158,6 @@ const stopNextServer = () => {
       console.log('Next.js server stopped');
       nextServerProcess = undefined;
       readyPromise = undefined;
-      serverUrl = undefined;
       resolve();
     });
 

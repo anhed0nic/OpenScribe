@@ -63,7 +63,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  distDir: "../../build/web",
   output: 'standalone',
   async headers() {
     return [
@@ -73,7 +72,7 @@ const nextConfig = {
       },
     ]
   },
-  webpack: (config, { isServer }) => {
+  webpack: (config) => {
     // Add aliases for monorepo packages to match tsconfig.json paths
     // Note: Webpack aliases are simple prefix replacements, not glob patterns
     // Don't use wildcards (*) - point to directories and webpack appends the rest

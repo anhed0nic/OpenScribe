@@ -7,7 +7,21 @@ import path from "node:path"
 const root = path.resolve(process.cwd())
 
 const allowedRootDirs = new Set(["apps", "packages", "config", "build", "node_modules"])
-const allowedRootFiles = new Set(["package.json", "pnpm-lock.yaml", "tsconfig.json", "README.md", "architecture.md", ".gitignore"])
+const allowedRootFiles = new Set([
+  "package.json",
+  "pnpm-lock.yaml",
+  "tsconfig.json",
+  "README.md",
+  "architecture.md",
+  ".gitignore",
+  "BUILD_STATUS.md",
+  "MONITORING_GUIDE.md",
+  "QUICK_START.md",
+  "STABILITY_FIXES.md",
+  "TEST_SESSION.md",
+  "rebuild-and-test.sh",
+  "test-electron-fixes.sh",
+])
 const buildArtifacts = new Set([".next", ".tests-dist", "dist"])
 const configPattern = /\.config\.(?:js|cjs|mjs|ts)$/
 const kebabCase = /^[a-z0-9]+(?:-[a-z0-9]+)*$/

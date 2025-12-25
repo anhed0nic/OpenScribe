@@ -105,7 +105,7 @@ if (!gotTheLock) {
 } else {
   // This is the primary instance
   // Handle attempts to launch a second instance
-  app.on('second-instance', (event, commandLine, workingDirectory) => {
+  app.on('second-instance', () => {
     // Someone tried to open the app again
     // Focus our existing window instead of creating a new instance
     if (mainWindow) {

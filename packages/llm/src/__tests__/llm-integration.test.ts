@@ -97,7 +97,7 @@ test("runLLMRequest with jsonSchema returns valid JSON", async () => {
   })
 
   // Response should be valid JSON
-  let parsed: any
+  let parsed: { name: unknown; age: unknown }
   assert.doesNotThrow(() => {
     parsed = JSON.parse(response)
   }, "Response should be valid JSON")

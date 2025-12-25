@@ -14,14 +14,12 @@ export function PermissionsDialog({ onComplete }: PermissionsDialogProps) {
   const [initialCheckDone, setInitialCheckDone] = useState(false)
 
   useEffect(() => {
-    let interval: NodeJS.Timeout
-    
     const checkPermissions = async () => {
       try {
         let micGranted = false
         let screenGranted = false
         
-        const desktop = window.desktop as any
+        const desktop = window.desktop
         console.log("Desktop object available:", !!desktop)
         console.log("Desktop API methods:", desktop ? Object.keys(desktop) : "none")
         
@@ -52,12 +50,12 @@ export function PermissionsDialog({ onComplete }: PermissionsDialogProps) {
         if (!micGranted) {
           try {
             const devices = await navigator.mediaDevices.enumerateDevices()
-            const hasAudioInput = devices.some(device => device.kind === 'audioinput')
+            const hasAudioInput = devices.some((device) => device.kind === "audioinput")
             if (hasAudioInput) {
               // Try to get actual permission status
-              const result = await navigator.permissions.query({ name: 'microphone' as PermissionName })
+              const result = await navigator.permissions.query({ name: "microphone" as PermissionName })
               console.log("Browser microphone permission:", result.state)
-              micGranted = result.state === 'granted'
+              micGranted = result.state === "granted"
             }
           } catch (err) {
             // Permissions API not available, will need user interaction
@@ -77,24 +75,24 @@ export function PermissionsDialog({ onComplete }: PermissionsDialogProps) {
     
     // Wait a bit for Electron to fully initialize before first check
     const initialTimeout = setTimeout(() => {
-      checkPermissions()
+      void checkPermissions()
     }, 500)
     
     // Set up interval to periodically re-check permissions
-    interval = setInterval(() => {
-      checkPermissions()
+    const intervalId = setInterval(() => {
+      void checkPermissions()
     }, 2000)
     
     return () => {
       clearTimeout(initialTimeout)
-      if (interval) clearInterval(interval)
+      clearInterval(intervalId)
     }
   }, [])
 
   const handleEnableMicrophone = async () => {
     try {
       // First try to request permissions through the desktop API
-      const desktop = window.desktop as any
+      const desktop = window.desktop
       if (desktop?.requestMediaPermissions) {
         const result = await desktop.requestMediaPermissions()
         if (result.microphoneGranted) {
@@ -109,8 +107,8 @@ export function PermissionsDialog({ onComplete }: PermissionsDialogProps) {
         setMicrophoneGranted(true)
       } catch {
         // If browser permission fails, open system settings
-        if (desktop?.openScreenPermissionSettings) {
-          await desktop.openScreenPermissionSettings()
+        if (window.desktop?.openScreenPermissionSettings) {
+          await window.desktop.openScreenPermissionSettings()
         }
       }
     } catch (error) {
@@ -120,7 +118,7 @@ export function PermissionsDialog({ onComplete }: PermissionsDialogProps) {
 
   const handleEnableScreenRecording = async () => {
     try {
-      const desktop = window.desktop as any
+      const desktop = window.desktop
       if (desktop?.openScreenPermissionSettings) {
         await desktop.openScreenPermissionSettings()
       }

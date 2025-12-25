@@ -115,11 +115,69 @@ OpenAI via `runLLMRequest`, but it is the home for:
 
 ### `packages/shell`
 
-Electron “main” process, preload scripts, IPC contracts, desktop packaging
+Electron "main" process, preload scripts, IPC contracts, desktop packaging
 scripts (`scripts/prepare-next.js`, `next-server.js`). When the desktop app
 gains new OS integrations (screen capture, auto-update, etc.), the code lives
 here. Renderer UI should continue to import from `packages/ui`/pipeline rather
 than duplicating logic.
+
+#### Desktop Build: node_modules Workaround
+
+**Problem**: electron-builder has a known issue ([#3104](https://github.com/electron-userland/electron-builder/issues/3104))
+where it ignores directories named `node_modules` in `extraResources`, even when
+explicitly configured. This caused the packaged Electron app to be missing the
+Next.js standalone `node_modules`, resulting in "Next.js server did not start
+after 20s" errors.
+
+**Solution**: A rename workaround implemented across three files:
+
+1. **`packages/shell/scripts/prepare-next.js` (lines 35-47)**
+   During build (`pnpm build:desktop`), this script renames
+   `apps/web/.next/standalone/node_modules` → `_node_modules` BEFORE
+   electron-builder packages the app. electron-builder successfully copies
+   `_node_modules` since it doesn't trigger the ignore pattern.
+
+2. **`packages/shell/next-server.js` (lines 17-41)**
+   At runtime when the app launches, `resolveStandaloneDir()` checks if
+   `_node_modules` exists and renames it back to `node_modules` so the Next.js
+   server can find its dependencies.
+
+3. **`.electronignore`**
+   Created to provide more specific ignore rules for electron-builder (ignores
+   root `/node_modules` but not nested ones).
+
+**Build Flow**:
+```
+pnpm build:desktop
+  ↓
+Next.js creates standalone output with node_modules
+  ↓
+prepare-next.js renames: node_modules → _node_modules
+  ↓
+electron-builder packages everything (including _node_modules)
+  ↓
+DMG/ZIP/App created successfully
+```
+
+**Runtime Flow**:
+```
+User launches OpenScribe.app
+  ↓
+main.js runs → next-server.js calls resolveStandaloneDir()
+  ↓
+Detects _node_modules exists, renames to node_modules (once)
+  ↓
+Next.js server starts successfully with proper dependencies
+  ↓
+App window loads
+```
+
+**Why This Works Long-Term**:
+- The workaround is automatic—no manual steps needed for each build
+- Every `pnpm build:desktop` applies the rename during `prepare-next.js`
+- Every app launch restores `node_modules` at runtime (idempotent, safe)
+- Documented with code comments referencing electron-builder issue #3104
+- If electron-builder ever fixes the issue, the runtime rename becomes a no-op
 
 ### `packages/tests`
 
@@ -134,7 +192,7 @@ not tied to a specific pipeline stage.
 Holds all shared tool configuration. Current files:
 
 * `next.config.mjs` – base Next configuration (CSP, headers, standalone
-  output to `build/web`).
+  output inside `apps/web/.next`).
 * `postcss.config.mjs` – Tailwind v4 plugin setup.
 * `tsconfig.test.json` – TypeScript config used by `pnpm build:test`.
 * `components.json` – shadcn UI CLI settings (points to `@ui` aliases).
@@ -148,10 +206,23 @@ them via small stubs (similar to `apps/web/next.config.mjs`).
 
 Generated artifacts only. Expected subfolders:
 
-* `build/web/` – output of `pnpm build` (Next standalone server, static assets).
 * `build/tests-dist/` – compiled test sources (`pnpm build:test`).
 * `build/dist/` – packaged binaries (Electron DMG/ZIP) when running
   `pnpm build:desktop`.
+
+Next.js generates its standalone bundle under `apps/web/.next` (ignored by Git),
+so it no longer sits inside `build/`.
+
+To smoke test the standalone server without packaging the Electron app:
+
+```
+pnpm build
+node packages/shell/scripts/prepare-next.js
+PORT=4123 node apps/web/.next/standalone/apps/web/server.js
+```
+
+Then curl a static asset (e.g. `curl -I http://127.0.0.1:4123/_next/static/css/<file>.css`)
+to confirm Next is serving files correctly before running `pnpm build:desktop`.
 
 This directory should be safe to delete at any time and is git-ignored.
 

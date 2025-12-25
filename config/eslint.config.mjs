@@ -10,7 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const tsconfigRootDir = path.resolve(__dirname, "..")
 const kebabCasePattern = "^[a-z0-9]+(?:-[a-z0-9]+)*$"
 
-const ignoredPaths = ["build/**", "node_modules/**", "apps/web/public/**"]
+const ignoredPaths = ["build/**", "node_modules/**", "apps/web/public/**", "apps/web/.next/**"]
 const nodeFiles = ["config/**/*.{js,mjs,cjs}", "packages/shell/**/*.js"]
 const nodeGlobals = {
   require: "readonly",

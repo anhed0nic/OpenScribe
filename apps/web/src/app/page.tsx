@@ -71,11 +71,6 @@ function HomePageContent() {
         const micStatus = await desktop.getMediaAccessStatus("microphone")
         console.log("[Main Page] Microphone status:", micStatus)
         
-        // For system audio, we need to actually test if we can capture it
-        // The permission is granted implicitly when we successfully capture system audio
-        console.log("[Main Page] System audio is granted through capture capability")
-        const systemAudioGranted = true // Will be tested during actual capture
-
         if (micStatus !== "granted") {
           console.log("[Main Page] Missing microphone permission, showing dialog")
           setShowPermissionsDialog(true)

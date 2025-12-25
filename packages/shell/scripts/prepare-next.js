@@ -4,10 +4,12 @@ const path = require('path');
 const fs = require('fs-extra');
 
 const rootDir = process.cwd();
-const standaloneDir = path.join(rootDir, 'build', 'web', 'standalone');
-const staticSource = path.join(rootDir, 'build', 'web', 'static');
-const staticDestination = path.join(standaloneDir, '.next', 'static');
-const publicSource = path.join(rootDir, 'apps', 'web', 'public');
+const appDir = path.join(rootDir, 'apps', 'web');
+const nextDir = path.join(appDir, '.next');
+const standaloneDir = path.join(nextDir, 'standalone');
+const staticSource = path.join(nextDir, 'static');
+const staticDestination = path.join(standaloneDir, 'apps', 'web', '.next', 'static');
+const publicSource = path.join(appDir, 'public');
 const publicDestination = path.join(standaloneDir, 'public');
 
 const ensureExists = async (source, destination) => {
@@ -29,6 +31,20 @@ const run = async () => {
 
   await ensureExists(staticSource, staticDestination);
   await ensureExists(publicSource, publicDestination);
+
+  // Workaround for electron-builder issue #3104:
+  // electron-builder ignores directories named "node_modules" in extraResources
+  // Rename node_modules to _node_modules for packaging
+  const nodeModulesPath = path.join(standaloneDir, 'node_modules');
+  const renamedNodeModulesPath = path.join(standaloneDir, '_node_modules');
+
+  if (await fs.pathExists(nodeModulesPath)) {
+    // Remove any existing renamed directory first
+    await fs.remove(renamedNodeModulesPath);
+    // Rename node_modules to _node_modules
+    await fs.rename(nodeModulesPath, renamedNodeModulesPath);
+    console.log('✅ Renamed node_modules to _node_modules for electron-builder');
+  }
 
   console.log('✅ Prepared standalone Next.js output for Electron packaging');
 };
