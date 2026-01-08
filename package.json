@@ -2,6 +2,7 @@
   "name": "my-v0-project",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "description": "OpenScribe – privacy-conscious clinical documentation assistant",
   "author": "Sam Margolis",
   "main": "packages/shell/main.js",
