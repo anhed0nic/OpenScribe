@@ -10,12 +10,21 @@ import { Save, Copy, Download, Check, AlertTriangle } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@ui/lib/utils"
 
+const VISIT_TYPE_LABELS: Record<string, string> = {
+  history_physical: "History & Physical",
+  problem_visit: "Problem Visit",
+  consult_note: "Consult Note",
+}
+
 interface NoteEditorProps {
   encounter: Encounter
   onSave: (noteText: string) => void
 }
 
+type TabType = "note" | "transcript"
+
 export function NoteEditor({ encounter, onSave }: NoteEditorProps) {
+  const [activeTab, setActiveTab] = useState<TabType>("note")
   const [noteMarkdown, setNoteMarkdown] = useState<string>(encounter.note_text || "")
   const [hasChanges, setHasChanges] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -40,17 +49,22 @@ export function NoteEditor({ encounter, onSave }: NoteEditorProps) {
   }
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(noteMarkdown)
+    const textToCopy = activeTab === "note" ? noteMarkdown : encounter.transcript_text
+    await navigator.clipboard.writeText(textToCopy)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
 
   const handleExport = () => {
-    const blob = new Blob([noteMarkdown], { type: "text/markdown" })
+    const isNote = activeTab === "note"
+    const content = isNote ? noteMarkdown : encounter.transcript_text
+    const blob = new Blob([content], { type: isNote ? "text/markdown" : "text/plain" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `${encounter.patient_name || "encounter"}_${format(new Date(encounter.created_at), "yyyy-MM-dd")}.md`
+    const suffix = isNote ? "note" : "transcript"
+    const extension = isNote ? "md" : "txt"
+    a.download = `${encounter.patient_name || "encounter"}_${suffix}_${format(new Date(encounter.created_at), "yyyy-MM-dd")}.${extension}`
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -76,61 +90,101 @@ export function NoteEditor({ encounter, onSave }: NoteEditorProps) {
               {encounter.visit_reason && (
                 <>
                   <span className="text-border">·</span>
-                  <span>{encounter.visit_reason}</span>
+                  <span>{VISIT_TYPE_LABELS[encounter.visit_reason] || encounter.visit_reason}</span>
                 </>
               )}
             </div>
           </div>
+        </div>
 
-          <div className="flex shrink-0 items-center gap-1">
+        {/* Tabs with action buttons */}
+        <div className="mt-4 flex items-center justify-between gap-4 border-b border-border">
+          <div className="flex gap-1">
+            <button
+              onClick={() => setActiveTab("note")}
+              className={cn(
+                "px-4 py-2 text-sm font-medium transition-colors",
+                "border-b-2 -mb-px",
+                activeTab === "note"
+                  ? "border-foreground text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              Clinical Note
+            </button>
+            <button
+              onClick={() => setActiveTab("transcript")}
+              className={cn(
+                "px-4 py-2 text-sm font-medium transition-colors",
+                "border-b-2 -mb-px",
+                activeTab === "transcript"
+                  ? "border-foreground text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              Transcript
+            </button>
+          </div>
+          
+          <div className="flex items-center gap-1 pb-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={handleCopy}
-              className="h-9 w-9 rounded-full p-0 text-muted-foreground hover:text-foreground"
+              className="h-8 rounded-full px-3 text-muted-foreground hover:text-foreground"
             >
-              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              <span className="sr-only">Copy</span>
+              {copied ? <Check className="h-4 w-4 mr-1.5" /> : <Copy className="h-4 w-4 mr-1.5" />}
+              <span className="text-xs">Copy</span>
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleExport}
-              className="h-9 w-9 rounded-full p-0 text-muted-foreground hover:text-foreground"
+              className="h-8 rounded-full px-3 text-muted-foreground hover:text-foreground"
             >
-              <Download className="h-4 w-4" />
-              <span className="sr-only">Export</span>
+              <Download className="h-4 w-4 mr-1.5" />
+              <span className="text-xs">Export</span>
             </Button>
-            <Button
-              size="sm"
-              onClick={handleSave}
-              disabled={!hasChanges}
-              className={cn(
-                "ml-2 rounded-full bg-foreground text-background hover:bg-foreground/90",
-                saved && "bg-success hover:bg-success",
-              )}
-            >
-              {saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
-              <span className="ml-2">{saved ? "Saved" : "Save"}</span>
-            </Button>
+            {activeTab === "note" && (
+              <Button
+                size="sm"
+                onClick={handleSave}
+                disabled={!hasChanges}
+                className={cn(
+                  "ml-1 h-8 rounded-full px-3 bg-foreground text-background hover:bg-foreground/90",
+                  saved && "bg-success hover:bg-success",
+                )}
+              >
+                {saved ? <Check className="h-4 w-4 mr-1.5" /> : <Save className="h-4 w-4 mr-1.5" />}
+                <span className="text-xs">{saved ? "Saved" : "Save"}</span>
+              </Button>
+            )}
           </div>
-        </div>
-
-        {/* Draft warning */}
-        <div className="mt-4 flex items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-sm text-muted-foreground">
-          <AlertTriangle className="h-4 w-4 shrink-0" />
-          <span>AI-generated draft — requires clinician review before use</span>
         </div>
       </div>
 
       <ScrollArea className="flex-1">
         <div className="p-8">
-          <Textarea
-            value={noteMarkdown}
-            onChange={(e) => handleNoteChange(e.target.value)}
-            placeholder="Clinical note markdown..."
-            className="min-h-[600px] resize-none rounded-xl border-border bg-secondary font-mono text-sm leading-relaxed focus-visible:ring-1 focus-visible:ring-ring"
-          />
+          {activeTab === "note" ? (
+            <Textarea
+              value={noteMarkdown}
+              onChange={(e) => handleNoteChange(e.target.value)}
+              placeholder="Clinical note markdown..."
+              className="min-h-[600px] resize-none rounded-xl border-border bg-secondary font-mono text-sm leading-relaxed focus-visible:ring-1 focus-visible:ring-ring"
+            />
+          ) : (
+            <div className="min-h-[600px] rounded-xl border border-border bg-secondary p-6">
+              {encounter.transcript_text ? (
+                <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-foreground">
+                  {encounter.transcript_text}
+                </pre>
+              ) : (
+                <div className="flex h-full items-center justify-center text-center">
+                  <p className="text-sm text-muted-foreground">No transcript available</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </ScrollArea>
     </div>

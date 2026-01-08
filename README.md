@@ -2,11 +2,11 @@
 
 ## Demo
 
-[![Watch Demo](.github/demo.png)](https://www.loom.com/share/bf6170785b7f492db56a56636c70620a)
+[![Watch Demo](.github/demo.png)]()
 
 ## Project Overview
 
-OpenScribe is a local-first AI Scribe that helps clinicians record patient encounters, transcribe audio, and generate structured draft clinical notes using LLMs. The tool stores all data locally by default. 
+OpenScribe is a local-first AI Medical Scribe that helps clinicians record patient encounters, transcribe audio, and generate structured draft clinical notes using LLMs. The tool stores all data locally by default.
 
 ## Purpose and Philosophy
 

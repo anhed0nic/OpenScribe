@@ -8,6 +8,13 @@ import { ScrollArea } from "@ui/lib/ui/scroll-area"
 import { Search, FileText, Clock, Plus, Trash2 } from "lucide-react"
 import { useState, useMemo } from "react"
 import { formatDistanceToNow } from "date-fns"
+
+const VISIT_TYPE_LABELS: Record<string, string> = {
+  history_physical: "History & Physical",
+  problem_visit: "Problem Visit",
+  consult_note: "Consult Note",
+}
+
 interface EncounterListProps {
   encounters: Encounter[]
   selectedId: string | null
@@ -100,7 +107,7 @@ export function EncounterList({
                         {encounter.patient_name || "Unknown patient"}
                       </p>
                       <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                        {encounter.visit_reason || "No reason specified"}
+                        {VISIT_TYPE_LABELS[encounter.visit_reason] || encounter.visit_reason || "No reason specified"}
                       </p>
                     </div>
                   </div>
