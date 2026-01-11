@@ -5,7 +5,7 @@ import type { Encounter } from "@storage/types"
 import { useEncounters, EncounterList, IdleView, NewEncounterForm, RecordingView, ProcessingView, ErrorBoundary, PermissionsDialog, SettingsDialog, SettingsBar, useHttpsWarning } from "@ui"
 import { NoteEditor } from "@note-rendering"
 import { useAudioRecorder, type RecordedSegment, warmupMicrophonePermission, warmupSystemAudioPermission } from "@audio"
-import { useSegmentUpload } from "@transcription"
+import { useSegmentUpload, type UploadError } from "@transcription";
 import { generateClinicalNote } from "@/app/actions"
 import { getPreferences, setPreferences, type NoteLength, debugLog, debugLogPHI, debugError, debugWarn, initializeAuditLog } from "@storage"
 
@@ -116,9 +116,9 @@ function HomePageContent() {
     setPreferences({ noteLength: length })
   }
 
-  const handleUploadError = useCallback((error: any) => {
-    debugError("Segment upload failed:", error?.code, "-", error?.message)
-  }, [])
+  const handleUploadError = useCallback((error: UploadError) => {
+    debugError("Segment upload failed:", error.code, "-", error.message);
+  }, []);
 
   const { enqueueSegment, resetQueue } = useSegmentUpload(sessionId, {
     onError: handleUploadError,
